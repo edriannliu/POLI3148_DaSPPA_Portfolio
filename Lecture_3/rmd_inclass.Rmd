@@ -1,0 +1,54 @@
+---
+title: "Lecture 3"
+author: "Edrian"
+date: "2023-09-21"
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
+---
+
+Global setup: echo = TRUE meaning always show code in the Rmarkdown
+
+If include = FALSE, then will not show
+
+```{r setup, include=TRUE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Texts and simple codes
+
+Main text. **text**, *text*, Text~subtext~, Text^subtext^ .
+
+```{r}
+1 + 1
+```
+
+The textbooks are written in R markdown format.
+
+## Output figures
+
+```{r}
+plot(1:10)
+```
+
+## Display Data
+
+```{r}
+cars
+```
+
+## In-line R Code
+
+Scientific research shows that 1+1 = `r 1+1` . (using \`r\`).
+
+As it's outside of R code chunk, "command & enter does not work".
+
+To knit PDF format:
+
+```{r}
+#install.packages("tinytex")
+#tinytex::install_tinytex()
+```
+
+Knitting Rmarkdown will run all the codes in the document, therefore for installing, after installing a package, *comment* the code to deactivate it.
