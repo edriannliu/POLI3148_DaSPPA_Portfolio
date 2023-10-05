@@ -1,0 +1,215 @@
+---
+title: "In-class exercise 2"
+author: "LIU Yijun, Edrian"
+date: "2023-10-05"
+output: pdf_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+## 1: Codebook lookup
+
+### 1.1 Indicators regarding the quality of education
+
+In P381 of the Codebook, we can see two indicators regarding education:
+
+1.  Education 15+ (e_peaveduc), which describes the average years of education among citizens older than 15.
+2.  Educational inequality, Gini (e_peedgini), which describes the level of inequality of education achieved by the population aged 15 or older.
+
+### 1.2 Data's coverage
+
+For Education 15+: worldwide coverage, 1820-2022
+
+For Educational inequality, Gini: worldwide coverage, 1850-2010
+
+### 1.3 Sources
+
+Clio Infra (clio-infra.eu)
+
+## 2: Subset by columns
+
+### 2.1 Country-year identifiers and indicators of education quality
+
+Step 1: Loading library and data
+
+```{r}
+library(tidyverse)
+
+d <- read_csv("data/vdem/1984_2022/vdem_1984_2022_external.csv")
+```
+
+Step 2: Selecting the identifiers and indicators
+
+```{r}
+d_edu <- d |>
+  select(country_name, country_id, year, e_peaveduc, e_peedgini)
+```
+
+### 2.2 Renaming Columns
+
+```{r}
+d_edu <- d_edu |>
+  rename("Country" = "country_name",
+         "ID" = "country_id",
+         "Year" = "year", 
+         "Education_15" = "e_peaveduc", 
+         "Education_Inequality" = "e_peedgini")
+
+glimpse(d_edu)
+```
+
+## 3. Subset by rows
+
+### 3.1 Listing 5 country-years with highest education level
+
+```{r}
+d_edu |>
+  slice_max(order_by = Education_15, n = 5)
+```
+
+As the United Kingdom has 13 years of identical data (13.3 years), they are all shown in the result.
+
+### 3.2 Listing 5 country-years with highest education inequality
+
+```{r}
+d_edu |>
+  slice_max(order_by = Education_Inequality, n = 5)
+```
+
+## 4. Summarize the data
+
+### 4.1 Check data availability
+
+For `Education_15`:
+
+```{r}
+d_edu |>
+  mutate(edu_15_missing = as.numeric(is.na(Education_15))) |>
+  group_by(Country) |>
+  summarize(num_edu_15_missing = sum(edu_15_missing))
+```
+
+For `Education_Inequality`:
+
+```{r}
+d_edu |>
+  mutate(edu_inequality_missing = as.numeric(is.na(Education_Inequality))) |>
+  group_by(Country) |>
+  summarize(num_edu_inequality_missing = sum(edu_inequality_missing))
+```
+
+### 4.2 Country-level indicators
+
+#### 4.2.1 Average level of education quality, 1984-2022
+
+For `Education_15`:
+
+```{r}
+
+# Countries with longest average education years
+d_edu |>
+  filter(Year >= 1984 & Year <= 2022) |>
+  arrange(Year) |>
+  group_by(Country) |>
+  summarize(Average_Education_15 = mean(Education_15, na.rm = TRUE)) |>
+  ungroup() |>
+  arrange(desc(Average_Education_15))
+
+# Countries with shortest average education years
+d_edu |>
+  filter(Year >= 1984 & Year <= 2022) |>
+  arrange(Year) |>
+  group_by(Country) |>
+  summarize(Average_Education_15 = mean(Education_15, na.rm = TRUE)) |>
+  ungroup() |>
+  arrange(Average_Education_15)
+```
+
+For `Education_Inequality`:
+
+```{r}
+# Countries with least amount of inequality
+d_edu |>
+  filter(Year >= 1984 & Year <= 2022) |>
+  arrange(Year) |>
+  group_by(Country) |>
+  summarize(Average_Education_Inequality = mean(Education_Inequality, na.rm = TRUE)) |>
+  ungroup() |>
+  arrange(Average_Education_Inequality)
+
+# Countries with most amount of inequality
+d_edu |>
+  filter(Year >= 1984 & Year <= 2022) |>
+  arrange(Year) |>
+  group_by(Country) |>
+  summarize(Average_Education_Inequality = mean(Education_Inequality, na.rm = TRUE)) |>
+  ungroup() |>
+  arrange(desc(Average_Education_Inequality))
+```
+
+#### 4.2.2 Change of education quality, 1984-2022
+
+For `Education_15`:
+
+```{r}
+# Countries with most increase in average education years
+d_edu |>
+  filter(Year >= 1984 & Year <= 2022) |>
+  arrange(Year) |>
+  group_by(Country) |>
+  summarise(Education_15_Change =
+              last(Education_15, na_rm = TRUE) -
+              first(Education_15, na_rm = TRUE)) |>
+  ungroup() |>
+  arrange(desc(Education_15_Change))
+
+# Countries with least increase in education years
+d_edu |>
+  filter(Year >= 1984 & Year <= 2022) |>
+  arrange(Year) |>
+  group_by(Country) |>
+  summarise(Education_15_Change =
+              last(Education_15, na_rm = TRUE) -
+              first(Education_15, na_rm = TRUE)) |>
+  ungroup() |>
+  arrange((Education_15_Change))
+```
+
+For `Education_Inequality`:
+
+```{r}
+# Countries with most decline of education inequality
+d_edu |>
+  filter(Year >= 1984 & Year <= 2022) |>
+  arrange(Year) |>
+  group_by(Country) |>
+  summarise(Education_Inequality_Change =
+              last(Education_Inequality, na_rm = TRUE) -
+              first(Education_Inequality, na_rm = TRUE)) |>
+  ungroup() |>
+  arrange(desc(Education_Inequality_Change))
+
+# Countries with most increase in education inequality
+
+d_edu |>
+  filter(Year >= 1984 & Year <= 2022) |>
+  arrange(Year) |>
+  group_by(Country) |>
+  summarise(Education_Inequality_Change =
+              last(Education_Inequality, na_rm = TRUE) -
+              first(Education_Inequality, na_rm = TRUE)) |>
+  ungroup() |>
+  arrange(Education_Inequality_Change)
+```
+
+### 4.3 Discussion
+
+Which countries perform the best and the worst in terms of education quality in the past four decades?
+
+If we look at the **average performance** over the years, then developed countries such as Germany, Australia, and the UK has the best education quality, where an average citizen would have nearly 13 years of education. Meanwhile, developing countries such as Burkina Faso, Niger, and Mali has the worst education quality, where an average citizen only receives about 1 year of education.
+
+In terms of education inequality, countries such as Austria, Barbados, and Denmark are the most equal, while countries such as Burkina Faso, Mali, and Niger have serious inequality.
+
+However, if we look at **improvements**, then countries such as Botswana, Singapore, and Libya see the largest increase in education years of their citizens, while countries such as Tajikistan, North Korea, and Russia see little increase, or even decline, in this regard.
+
+For education inequality, only 7 countries have improvements: Costa Rica, New Zealand, Spain, Trinidad and Tobago, Switzerland, Lebanon, and Seychelles. In other countries, inequality exacerbated, with Nepal, Botswana, and Haiti having the worse situation.
