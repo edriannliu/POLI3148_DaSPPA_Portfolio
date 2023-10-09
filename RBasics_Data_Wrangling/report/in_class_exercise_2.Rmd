@@ -52,7 +52,7 @@ d_edu <- d_edu |>
   rename("Country" = "country_name",
          "ID" = "country_id",
          "Year" = "year", 
-         "Education_15" = "e_peaveduc", 
+         "Education_Level" = "e_peaveduc", 
          "Education_Inequality" = "e_peedgini")
 
 glimpse(d_edu)
@@ -64,7 +64,7 @@ glimpse(d_edu)
 
 ```{r}
 d_edu |>
-  slice_max(order_by = Education_15, n = 5)
+  slice_max(order_by = Education_Level, n = 5)
 ```
 
 As the United Kingdom has 13 years of identical data (13.3 years), they are all shown in the result.
@@ -80,55 +80,80 @@ d_edu |>
 
 ### 4.1 Check data availability
 
-For `Education_15`:
+#### 4.2.1 Data missing for each country
+
+For `Education_Level`:
 
 ```{r}
 d_edu |>
-  mutate(edu_15_missing = as.numeric(is.na(Education_15))) |>
+  mutate(edu_level_missing_country = as.numeric(is.na(Education_Level))) |>
   group_by(Country) |>
-  summarize(num_edu_15_missing = sum(edu_15_missing))
+  summarize(num_edu_level_missing_country = sum(edu_level_missing_country))
 ```
 
 For `Education_Inequality`:
 
 ```{r}
 d_edu |>
-  mutate(edu_inequality_missing = as.numeric(is.na(Education_Inequality))) |>
+  mutate(edu_inequality_missing_country = as.numeric(is.na(Education_Inequality))) |>
   group_by(Country) |>
-  summarize(num_edu_inequality_missing = sum(edu_inequality_missing))
+  summarize(num_edu_inequality_missing_country = sum(edu_inequality_missing_country))
+```
+
+#### 4.2.2 Data missing for each year
+
+For `Education_Level`,
+
+```{r}
+d_edu |>
+  mutate(edu_level_missing_year = as.numeric(is.na(Education_Level))) |>
+  group_by(Year) |>
+  summarize(num_edu_level_missing_year = sum(edu_level_missing_year))
+```
+
+For `Education_Inequality`,
+
+```{r}
+d_edu |>
+  mutate(edu_inequality_missing_year = as.numeric(is.na(Education_Inequality))) |>
+  group_by(Year) |>
+  summarize(num_edu_inequality_missing_year = sum(edu_inequality_missing_year))
 ```
 
 ### 4.2 Country-level indicators
 
 #### 4.2.1 Average level of education quality, 1984-2022
 
-For `Education_15`:
+For `Education_Level`:
 
 ```{r}
 
-# Countries with longest average education years
-d_edu |>
-  filter(Year >= 1984 & Year <= 2022) |>
-  arrange(Year) |>
-  group_by(Country) |>
-  summarize(Average_Education_15 = mean(Education_15, na.rm = TRUE)) |>
-  ungroup() |>
-  arrange(desc(Average_Education_15))
+# Countries with highest average education level
 
-# Countries with shortest average education years
 d_edu |>
   filter(Year >= 1984 & Year <= 2022) |>
   arrange(Year) |>
   group_by(Country) |>
-  summarize(Average_Education_15 = mean(Education_15, na.rm = TRUE)) |>
+  summarize(Average_Education_Level = mean(Education_Level, na.rm = TRUE)) |>
   ungroup() |>
-  arrange(Average_Education_15)
+  arrange(desc(Average_Education_Level))
+
+# Countries with lowest average education level
+
+d_edu |>
+  filter(Year >= 1984 & Year <= 2022) |>
+  arrange(Year) |>
+  group_by(Country) |>
+  summarize(Average_Education_Level = mean(Education_Level, na.rm = TRUE)) |>
+  ungroup() |>
+  arrange(Average_Education_Level)
 ```
 
 For `Education_Inequality`:
 
 ```{r}
 # Countries with least amount of inequality
+
 d_edu |>
   filter(Year >= 1984 & Year <= 2022) |>
   arrange(Year) |>
@@ -138,6 +163,7 @@ d_edu |>
   arrange(Average_Education_Inequality)
 
 # Countries with most amount of inequality
+
 d_edu |>
   filter(Year >= 1984 & Year <= 2022) |>
   arrange(Year) |>
@@ -149,30 +175,33 @@ d_edu |>
 
 #### 4.2.2 Change of education quality, 1984-2022
 
-For `Education_15`:
+Part 1: Total Change:
+
+For `Education_Level` :
 
 ```{r}
-# Countries with most increase in average education years
+# Countries with most increase in average education level
+
 d_edu |>
   filter(Year >= 1984 & Year <= 2022) |>
   arrange(Year) |>
   group_by(Country) |>
-  summarise(Education_15_Change =
-              last(Education_15, na_rm = TRUE) -
-              first(Education_15, na_rm = TRUE)) |>
+  summarise(Education_Level_Change =
+              last(Education_Level, na_rm = TRUE) -
+              first(Education_Level, na_rm = TRUE)) |>
   ungroup() |>
-  arrange(desc(Education_15_Change))
+  arrange(desc(Education_Level_Change))
 
 # Countries with least increase in education years
 d_edu |>
   filter(Year >= 1984 & Year <= 2022) |>
   arrange(Year) |>
   group_by(Country) |>
-  summarise(Education_15_Change =
-              last(Education_15, na_rm = TRUE) -
-              first(Education_15, na_rm = TRUE)) |>
+  summarise(Education_Level_Change =
+              last(Education_Level, na_rm = TRUE) -
+              first(Education_Level, na_rm = TRUE)) |>
   ungroup() |>
-  arrange((Education_15_Change))
+  arrange((Education_Level_Change))
 ```
 
 For `Education_Inequality`:
@@ -200,6 +229,32 @@ d_edu |>
               first(Education_Inequality, na_rm = TRUE)) |>
   ungroup() |>
   arrange(Education_Inequality_Change)
+```
+
+Part 2: Year-on-year change
+
+For `Education_Level`,
+
+```{r}
+d_edu |>
+  group_by(Country) |>
+  arrange(Year) |>
+  mutate(edu_level_yoy_change = Education_Level - lag(Education_Level, n = 1)) |>
+  ungroup() |>
+  select(Country, Year, edu_level_yoy_change) |>
+  arrange(Country, Year)
+```
+
+For `Education_Inequality` ,
+
+```{r}
+d_edu |>
+  group_by(Country) |>
+  arrange(Year) |>
+  mutate(edu_inequality_yoy_change = Education_Inequality - lag(Education_Inequality, n = 1)) |>
+  ungroup() |>
+  select(Country, Year, edu_inequality_yoy_change) |>
+  arrange(Country, Year)
 ```
 
 ### 4.3 Discussion
